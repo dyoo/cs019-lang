@@ -24,6 +24,20 @@
         [(equal? val set!-result) '(void)]
         [(is-image? val) val]
         [else (ph val basic sub)]))))
+
+  ;; Workaround for bug: http://bugs.racket-lang.org/query/?cmd=view&pr=12373
+  (current-build-share-hook
+   (let ([original-current-build-share-hook (current-build-share-hook)])
+     (lambda (v basic-share sub-share)
+       (cond
+        [(hash? v)
+         (hash-for-each v (lambda (k v)
+                            (basic-share k)
+                            (basic-share v)))
+         (basic-share v)]
+        [else
+         (original-current-build-share-hook v basic-share sub-share)]))))
+
   (use-named/undefined-handler
    (lambda (x)
      #f #;(and (memq 'use-function-output-syntax options)
